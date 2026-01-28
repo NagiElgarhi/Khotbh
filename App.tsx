@@ -272,8 +272,9 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
 
         try {
             const ai = new GoogleGenAI({ apiKey: finalApiKey });
+            // تم التغيير إلى gemini-3-pro-preview لأنه يتعامل بشكل أفضل مع المهام المعقدة والمخرجات الطويلة جداً
             const response = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-3-pro-preview",
                 contents: userPrompt,
                 config: {
                     systemInstruction: systemInstruction,
@@ -282,6 +283,10 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
                 },
             });
             
+            if (!response.text) {
+                throw new Error("Empty response from model");
+            }
+
             const generatedContent: GeneratedSermonContent = JSON.parse(response.text.trim());
 
             const newSermon: Sermon = {
@@ -300,8 +305,12 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
         } catch (e) {
             console.error("Failed to generate sermon:", e);
             let errorMessage = "فشل إنشاء الخطبة. يرجى التأكد من اتصالك بالإنترنت وصحة مفتاح API الخاص بك.";
-            if (e instanceof Error && (e.message.includes('API key') || e.message.includes('Headers'))) {
-                errorMessage = 'مشكلة في مفتاح API أو الترويسات. يرجى التأكد من إدخال مفتاح صحيح وصالح باللغة الإنجليزية فقط وبدون رموز غريبة.';
+            if (e instanceof Error) {
+                 if (e.message.includes('API key') || e.message.includes('Headers')) {
+                    errorMessage = 'مشكلة في مفتاح API. يرجى التأكد من إدخال مفتاح صحيح وصالح باللغة الإنجليزية فقط.';
+                 } else if (e.message.includes('500') || e.message.includes('Rpc failed')) {
+                    errorMessage = 'حدث خطأ في خوادم الذكاء الاصطناعي (500). يرجى المحاولة مرة أخرى لاحقاً أو التأكد من سلامة مفتاح API.';
+                 }
             }
             setGenerationError(errorMessage);
         } finally {
@@ -428,7 +437,7 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
                                             key={sermon.id}
                                             sermon={sermon}
                                             onSelect={handleSelectSermon}
-                                            isCompleted={isCompleted(sermon.id)}
+                                            isCompleted={isCompleted(selectedSermon?.id || sermon.id)}
                                         />
                                     ))}
                                 </div>

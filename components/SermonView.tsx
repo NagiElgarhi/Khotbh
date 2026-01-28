@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Sermon } from '../types.ts';
-import { PlayCircleIcon, CheckCircleIcon, ArrowRightIcon, DownloadIcon, PrintIcon, CopyIcon, ShareIcon, WhatsAppIcon } from './icons.tsx';
+import { PlayCircleIcon, CheckCircleIcon, ArrowRightIcon, DownloadIcon, PrintIcon, CopyIcon, WhatsAppIcon } from './icons.tsx';
 
 interface SermonViewProps {
   sermon: Sermon;
@@ -146,29 +146,7 @@ export const SermonView: React.FC<SermonViewProps> = ({ sermon, onBack, isComple
     URL.revokeObjectURL(url);
   };
 
-  const handleShareFile = async () => {
-    const html = getFormattedHTMLString();
-    const blob = new Blob([html], { type: 'text/html' });
-    const fileName = `خطبة_${sermon.title.replace(/ /g, '_')}_ملونة.html`;
-    const file = new File([blob], fileName, { type: 'text/html' });
-
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          files: [file],
-          title: sermon.title,
-          text: `خطبة الجمعة: ${sermon.title} - عبر منصة آيات الرحمن`,
-        });
-      } catch (error) {
-        console.error('Error sharing file:', error);
-      }
-    } else {
-      alert("ميزة المشاركة المباشرة غير مدعومة في متصفحك. يرجى تحميل الملف يدوياً ثم مشاركته.");
-    }
-  };
-
   const handleWhatsAppShare = async () => {
-    // محاولة استخدام navigator.share أولاً لأنه الأفضل لمشاركة الملفات
     const html = getFormattedHTMLString();
     const blob = new Blob([html], { type: 'text/html' });
     const fileName = `خطبة_${sermon.title.replace(/ /g, '_')}_ملونة.html`;
@@ -185,7 +163,6 @@ export const SermonView: React.FC<SermonViewProps> = ({ sermon, onBack, isComple
             console.error(e);
         }
     } else {
-        // Fallback للواتساب نصي فقط إذا لم يدعم المتصفح مشاركة الملفات
         const text = encodeURIComponent(`خطبة الجمعة: ${sermon.title}\nيمكنك تحميل الخطبة كاملة من تطبيق آيات الرحمن.`);
         window.open(`https://wa.me/?text=${text}`, '_blank');
     }
@@ -315,9 +292,6 @@ export const SermonView: React.FC<SermonViewProps> = ({ sermon, onBack, isComple
               <span>العودة إلى القائمة</span>
           </button>
           <div className="flex items-center gap-2">
-              <button onClick={handleShareFile} title="مشاركة الملف للنظام (لابتوب/موبايل)" className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors">
-                  <ShareIcon className="w-5 h-5"/>
-              </button>
               <button onClick={handleWhatsAppShare} title="مشاركة عبر واتساب" className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors">
                   <WhatsAppIcon className="w-5 h-5"/>
               </button>
@@ -415,15 +389,7 @@ export const SermonView: React.FC<SermonViewProps> = ({ sermon, onBack, isComple
                           title="مشاركة الملف عبر واتساب"
                       >
                           <WhatsAppIcon className="w-5 h-5"/>
-                          <span>واتساب</span>
-                      </button>
-                      <button 
-                          onClick={handleShareFile} 
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-sm"
-                          title="مشاركة الخطبة للنظام (لابتوب/موبايل)"
-                      >
-                          <ShareIcon className="w-5 h-5"/>
-                          <span>مشاركة النظام</span>
+                          <span>مشاركة عبر واتساب</span>
                       </button>
                       <button 
                           onClick={handleDownloadFormattedHTML} 
@@ -448,7 +414,7 @@ export const SermonView: React.FC<SermonViewProps> = ({ sermon, onBack, isComple
                   value={copyableText}
                   dir="rtl"
               />
-              <p className="text-xs text-gray-500 mt-2 text-center">يمكنك تحميل نسخة HTML الملونة أو مشاركتها مباشرة عبر واتساب وتيليجرام وغيرها لتسهيل القراءة والخطابة.</p>
+              <p className="text-xs text-gray-500 mt-2 text-center">يمكنك تحميل نسخة HTML الملونة أو مشاركتها مباشرة عبر واتساب لتسهيل القراءة والخطابة.</p>
           </div>
         )}
       </div>

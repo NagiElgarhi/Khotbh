@@ -68,6 +68,12 @@ export const WhatsAppIcon = ({ className = 'w-6 h-6' }: { className?: string }) 
   </svg>
 );
 
+export const TelegramIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.52-1.4.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.89.03-.25.38-.51 1.07-.78 4.2-1.82 7-3.03 8.4-3.61 4-.1.83.74 1.1.75.06 0 .21.01.3.08.09.07.1.18.11.25s-.01.13-.02.15z" />
+  </svg>
+);
+
 export const RomanTempleIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="currentColor" viewBox="0 0 24 24">
         <path d="M22 8l-1.6-1.2L12 1 3.6 6.8 2 8v1h20V8zM4.2 9L12 3.3 19.8 9H4.2zM3 10v9h2v-9H3zm4 0v9h2v-9H7zm4 0v9h2v-9h-2zm4 0v9h2v-9h-2zm4 0v9h2v-9h-2zM2 20v2h20v-2H2z" />
