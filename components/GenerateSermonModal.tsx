@@ -5,6 +5,9 @@ import { XIcon } from './icons.tsx';
 import { surahPageMap } from '../data/quranMetadata.ts';
 import { GoogleGenAI } from '@google/genai';
 
+// وظيفة لتنظيف مفتاح API من أي رموز مخفية أو غير لاتينية
+const sanitizeApiKey = (key: string) => key.replace(/[^\x21-\x7E]/g, "").trim();
+
 interface GenerateSermonModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -60,7 +63,7 @@ export const GenerateSermonModal: React.FC<GenerateSermonModalProps> = ({
         const surahName = surahs.find(s => s.number === surahNum)?.name;
 
         const fetchVerses = async () => {
-            const finalApiKey = apiKey || process.env.API_KEY;
+            const finalApiKey = sanitizeApiKey(apiKey || process.env.API_KEY || "");
             if (!finalApiKey) {
                 setPreviewError("الرجاء إدخال مفتاح API في الشريط العلوي للمتابعة.");
                 setPreviewLoading(false);
@@ -90,7 +93,7 @@ export const GenerateSermonModal: React.FC<GenerateSermonModalProps> = ({
                 setPreviewVerses(response.text || '');
             } catch (e) {
                 console.error("Failed to fetch preview verses:", e);
-                setPreviewError("فشل في جلب معاينة الآيات. يرجى المحاولة مرة أخرى.");
+                setPreviewError("فشل في جلب معاينة الآيات. يرجى التأكد من صحة مفتاح API.");
             } finally {
                 setPreviewLoading(false);
             }
@@ -128,8 +131,8 @@ export const GenerateSermonModal: React.FC<GenerateSermonModalProps> = ({
           <div className="p-12 text-center flex-grow flex items-center justify-center">
             <div>
               <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-lg text-gray-700">جاري إنشاء الخطبة...</p>
-              <p className="text-sm text-gray-500">قد يستغرق هذا بعض الوقت. الرجاء عدم إغلاق النافذة.</p>
+              <p className="text-lg text-gray-700 font-semibold">جاري إنشاء خطبة الـ 2000 كلمة...</p>
+              <p className="text-sm text-gray-500">هذه العملية تأخذ وقتاً أطول لأن المحتوى ضخم جداً. يرجى الانتظار.</p>
             </div>
           </div>
         ) : (

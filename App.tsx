@@ -11,6 +11,9 @@ import { Footer } from './components/Footer.tsx';
 import { SearchIcon, BookOpenIcon, CheckCircleIcon, PlusCircleIcon, MenuIcon } from './components/icons.tsx';
 import { getAllSermons, addSermon, updateSermon } from './data/idb.ts';
 
+// وظيفة لتنظيف مفتاح API من أي رموز مخفية أو غير لاتينية
+const sanitizeApiKey = (key: string) => (key || "").replace(/[^\x21-\x7E]/g, "").trim();
+
 const SermonCard: React.FC<{ sermon: Sermon; onSelect: (id: number) => void; isCompleted: boolean }> = ({ sermon, onSelect, isCompleted }) => (
     <div
         onClick={() => onSelect(sermon.id)}
@@ -48,11 +51,11 @@ const WelcomeGuide = () => (
                     </li>
                     <li>
                         <strong>إدخال المفتاح:</strong>
-                        {' '}قم بلصق المفتاح في الشريط العلوي ليتم حفظه.
+                        {' '}قم بلصق المفتاح في الشريط العلوي ليتم حفظه. (تأكد من عدم وجود مسافات أو أحرف عربية في المفتاح).
                     </li>
                     <li>
                         <strong>توليد الخطبة:</strong>
-                        {' '}اختر السورة، وسيقوم النظام بتوليد خطبة مفصلة جداً وشاملة.
+                        {' '}اختر السورة، وسيقوم النظام بتوليد خطبة مفصلة جداً وشاملة تبدأ بالاستفتاح النبوي.
                     </li>
                 </ol>
             </div>
@@ -109,7 +112,7 @@ const App: React.FC = () => {
 
         const savedKey = localStorage.getItem('gemini_api_key');
         if (savedKey) {
-            setApiKey(savedKey);
+            setApiKey(sanitizeApiKey(savedKey));
         }
 
         loadData();
@@ -131,8 +134,9 @@ const App: React.FC = () => {
     }, [searchTerm]);
 
     const handleApiKeyChange = (newKey: string) => {
-        setApiKey(newKey);
-        localStorage.setItem('gemini_api_key', newKey);
+        const cleanedKey = sanitizeApiKey(newKey);
+        setApiKey(cleanedKey);
+        localStorage.setItem('gemini_api_key', cleanedKey);
     };
 
     const filteredSermons = useMemo(() => {
@@ -192,7 +196,7 @@ const App: React.FC = () => {
         setGenerating(true);
         setGenerationError(null);
 
-        const finalApiKey = apiKey || process.env.API_KEY;
+        let finalApiKey = sanitizeApiKey(apiKey || process.env.API_KEY || "");
         if (!finalApiKey) {
             setGenerationError("الرجاء إدخال مفتاح API في الشريط العلوي للمتابعة.");
             setGenerating(false);
@@ -201,26 +205,28 @@ const App: React.FC = () => {
 
         const surahName = surahs.find(s => s.number === surahNumber)?.name;
         
+        const openingText = `إِنَّ الْحَمْدَ لِلَّهِ، نَحْمَدُهُ وَنَسْتَعِينُهُ وَنَسْتَغْفِرُهُ، وَنَعُوذُ بِاللَّهِ مِنْ شُرُورِ أَنْفُسِنَا، وَمِنْ سَيِّئَاتِ أَعْمَالِنَا، مَنْ يَهْدِهِ اللَّهُ فَلَا مُضِلَّ لَهُ، وَمَنْ يُضْلِلْ فَلَا هَادِيَ لَهُ، وَأَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ. يَا أَيُّهَا الَّذِينَ آمَنُوا اتَّقُوا اللَّهَ حَقَّ تُقَاتِهِ وَلَا تَمُوتُنَّ إِلَّا وَأَنْتُمْ مُسْلِمُونَ. أَمَّا بَعْدُ: فَإِنَّ أَصْدَقَ الْحَدِيثِ كِتَابُ اللَّهِ، وَخَيْرَ الْهَدْيِ هَدْيُ مُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ، وَشَرَّ الْأُمُورِ مُحْدَثَاتُهَا، وَكُلَّ مُحْدَثَةٍ بِدْعَةٌ، وَكُلَّ بِدْعَةٍ ضَلَالَةٌ، وَكُلَّ ضَلَالَةٍ فِي النَّارِ.`;
+
         const schema = {
             type: Type.OBJECT,
             properties: {
-                title: { type: Type.STRING, description: "عنوان رئيسي جذاب وشامل للخطبة." },
+                title: { type: Type.STRING, description: "عنوان رئيسي جذاب وشامل للخطبة (بشرط ألا يتجاوز 4 كلمات فقط)." },
                 verses: { type: Type.STRING, description: `مرجع للآيات المعتمدة.` },
                 khutbah1: {
                     type: Type.OBJECT,
                     properties: {
                         title: { type: Type.STRING, description: "عنوان للخطبة الأولى." },
-                        verses: { type: Type.STRING, description: "النص الكامل للآيات القرآنية مع التشكيل." },
-                        tafsir: { type: Type.STRING, description: "تفسير وشرح مفصل جداً وموسع للآيات (يجب أن يتجاوز 500 كلمة في هذا الجزء وحده)." },
-                        reflections: { type: Type.STRING, description: "تأملات إيمانية وعملية عميقة ومطولة جداً (يجب أن تكون غنية بالتفاصيل والأمثلة)." },
+                        verses: { type: Type.STRING, description: "ابدأ بهذا النص حرفياً: '" + openingText + "' ثم أتبعه مباشرة بنص السورة أو الآيات المختارة مع التشكيل الكامل." },
+                        tafsir: { type: Type.STRING, description: "تفسير وشرح مفصل جداً وموسع للآيات (يجب أن يتجاوز 600 كلمة)." },
+                        reflections: { type: Type.STRING, description: "تأملات إيمانية وعملية عميقة ومطولة جداً (يجب أن تتجاوز 500 كلمة)." },
                         messages: {
                             type: Type.ARRAY,
-                            description: "خمس رسائل إيمانية عملية (على الأقل) مفصلة للغاية.",
+                            description: "خمس رسائل إيمانية عملية مفصلة للغاية.",
                             items: {
                                 type: Type.OBJECT,
                                 properties: {
                                     message: { type: Type.STRING, description: "رسالة قوية ومختصرة." },
-                                    explanation: { type: Type.STRING, description: "شرح تطبيقي موسع جداً لهذه الرسالة في واقعنا المعاصر." },
+                                    explanation: { type: Type.STRING, description: "شرح تطبيقي موسع جداً لهذه الرسالة." },
                                 },
                                 required: ['message', 'explanation']
                             }
@@ -249,17 +255,20 @@ const App: React.FC = () => {
             required: ['title', 'verses', 'khutbah1', 'khutbah2']
         };
 
-        const systemInstruction = `أنت خطيب مفوه وعالم بالشريعة. مهمتك الأساسية هي كتابة خطبة جمعة مطولة جداً وبأسلوب أدبي رصين. يجب أن يصل إجمالي عدد كلمات الخطبة إلى حوالي 2000 كلمة. اجعل الشروحات والتفسيرات والتأملات مسهبة ومفصلة لأقصى درجة ممكنة، مع مراعاة الجودة والموثوقية العلمية.`;
+        const systemInstruction = `أنت خطيب مفوه وعالم بالشريعة. مهمتك الأساسية هي كتابة خطبة جمعة مطولة جداً وبأسلوب أدبي رصين باللغة العربية. يجب أن يصل إجمالي عدد كلمات الخطبة المولد إلى 2000 كلمة على الأقل. يجب ألا يتجاوز عنوان الخطبة (title) أربع كلمات كحد أقصى. يجب أن تلتزم تماماً بالبدء بالاستفتاح النبوي (خطبة الحاجة) في حقل khutbah1.verses قبل عرض الآيات. النص كله يجب أن يكون مشكولاً بالكامل بدقة.`;
 
         const userPrompt = `أنشئ خطبة جمعة متكاملة وثرية جداً حول سورة "${surahName}". 
-الهدف: كتابة خطبة مطولة جداً (المجموع 2000 كلمة). 
+الهدف: كتابة خطبة مطولة جداً (المجموع 2000 كلمة على الأقل). 
 ${topic ? `التركيز الخاص: "${topic}".` : ''}
 
-المتطلبات الإضافية:
-1. التفسير يجب أن يكون تحليلياً دقيقاً ومستفيضاً.
-2. التأملات يجب أن تلامس جوانب عديدة من حياة المسلم المعاصر بإسهاب.
-3. الرسائل العملية يجب أن تكون مفصلة بحيث يسهل على المستمع فهم كيفية التنفيذ.
-4. الخطبة الثانية يجب أن تكون غنية بالاستنباطات من الحديث النبوي.`;
+المتطلبات الإجبارية:
+1. يجب ألا يتجاوز عنوان الخطبة 4 كلمات فقط.
+2. ابدأ الخطبة الأولى في حقل "khutbah1.verses" بنص الاستفتاح: "${openingText}" ثم أتبعه مباشرة بنص السورة أو الآيات.
+3. التفسير يجب أن يكون مستفيضاً جداً (600+ كلمة).
+4. التأملات يجب أن تكون غزيرة (500+ كلمة).
+5. الرسائل العملية يجب أن تكون 5 على الأقل، مفصلة جداً.
+6. الخطبة الثانية يجب أن تكون ثرية بالاستنباطات.
+7. يجب تشكيل كل كلمة في الخطبة تشكيلاً كاملاً وصحيحاً.`;
 
         try {
             const ai = new GoogleGenAI({ apiKey: finalApiKey });
@@ -291,8 +300,8 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
         } catch (e) {
             console.error("Failed to generate sermon:", e);
             let errorMessage = "فشل إنشاء الخطبة. يرجى التأكد من اتصالك بالإنترنت وصحة مفتاح API الخاص بك.";
-            if (e instanceof Error && e.message.includes('API key')) {
-                errorMessage = 'مفتاح API غير صالح. يرجى الحصول على مفتاح جديد من Google AI Studio.';
+            if (e instanceof Error && (e.message.includes('API key') || e.message.includes('Headers'))) {
+                errorMessage = 'مشكلة في مفتاح API أو الترويسات. يرجى التأكد من إدخال مفتاح صحيح وصالح باللغة الإنجليزية فقط وبدون رموز غريبة.';
             }
             setGenerationError(errorMessage);
         } finally {
@@ -342,7 +351,7 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
                             >
                                 <MenuIcon className="w-6 h-6"/>
                             </button>
-                            <h1 className="text-2xl font-bold">منبر الجمعة</h1>
+                            <h1 className="text-2xl font-bold font-amiri tracking-wider">آيات الرحمن فى خطبة الجمعة</h1>
                         </div>
                         
                         <div className="flex items-center gap-x-4 gap-y-2 flex-wrap justify-end w-full md:w-auto">
@@ -374,7 +383,7 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
                                     rel="noopener noreferrer" 
                                     className="flex-shrink-0 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
                                 >
-                                    احصل على Apikey
+                                    احصل على مفتاح
                                 </a>
                             </div>
                         </div>
@@ -410,7 +419,7 @@ ${topic ? `التركيز الخاص: "${topic}".` : ''}
                                     }} 
                                     className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors">
                                         <PlusCircleIcon className="w-5 h-5"/>
-                                        <span>إنشاء خطبة جديدة (2000 كلمة)</span>
+                                        <span>إنشاء خطبة (2000 كلمة)</span>
                                     </button>
                                 </div>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
